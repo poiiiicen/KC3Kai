@@ -412,6 +412,7 @@ Previously known as "Reactor"
 			PlayerManager.consumables.ring -= 1;
 			PlayerManager.setConsumables();
 			KC3Network.trigger("Consumables");
+			KC3Network.trigger("Fleet");
 		},
 		
 		"api_req_kaisou/remodeling":function(params, response, headers){
@@ -979,6 +980,7 @@ Previously known as "Reactor"
 				response.api_data.api_bosscell_no,
 				response.api_data.api_bosscomp
 			);
+			KC3Master.setCellData(response.api_data);
 			
 			KC3QuestManager.get(214).increment(0); // Bw1: 1st requirement: Sortie 36 times (index:0)
 			

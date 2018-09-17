@@ -34,6 +34,7 @@ Provides access to data on built-in JSON files
 		_dataColle:{},
 		_eventColle:{},
 		_edges:{},
+		_edgesOld:{},
 		_nodes:{},
 		_gunfit:{},
 		_defaultIcon:"",
@@ -116,6 +117,7 @@ Provides access to data on built-in JSON files
 			this._exp        = JSON.parse( $.ajax(repo+'exp_hq.json', { async: false }).responseText );
 			this._expShip    = JSON.parse( $.ajax(repo+'exp_ship.json', { async: false }).responseText );
 			this._edges      = JSON.parse( $.ajax(repo+'edges.json', { async: false }).responseText );
+			this._edgesOld   = JSON.parse( $.ajax(repo+'edges_p1.json', { async: false }).responseText );
 			this._nodes      = JSON.parse( $.ajax(repo+'nodes.json', { async: false }).responseText );
 			this._gunfit     = JSON.parse( $.ajax(repo+'gunfit.json', { async: false }).responseText );
 			// fud: Frequently updated data. rarely & randomly updated on maintenance weekly in fact
@@ -197,6 +199,35 @@ Provides access to data on built-in JSON files
 		
 		formationText :function(formationId){
 			return this._battle.formation[formationId] || "";
+		},
+		
+		itemIcon :function(type3Id, iconSetId = ConfigManager.info_items_iconset){
+			// current auto using phase 2
+			const path = "items" + (["_p2", "", "_p2"][iconSetId || 0] || "");
+			return chrome.extension.getURL(`/assets/img/${path}/${type3Id}.png`);
+		},
+		
+		statIcon :function(statName, iconSetId = ConfigManager.info_stats_iconset){
+			// current auto using phase 1
+			const path = "stats" + (["", "", "_p2"][iconSetId || 0] || "");
+			return chrome.extension.getURL(`/assets/img/${path}/${statName}.png`);
+		},
+		
+		itemIconsByType2 :function(type2Id){
+			if(!this._type2IconMap){
+				// Build type2 id to icon type3 id map from master data
+				const iconMap = {};
+				$.each(KC3Master.all_slotitems(), (_, g) => {
+					if(KC3Master.isAbyssalGear(g.api_id)) return false;
+					// some items are belonged to XXX (II) type (38, 93, 94)
+					const t2Id = KC3Master.equip_type_sp(g.api_id, g.api_type[2]);
+					const iconId = g.api_type[3];
+					iconMap[t2Id] = iconMap[t2Id] || [];
+					if(!iconMap[t2Id].includes(iconId)) iconMap[t2Id].push(iconId);
+				});
+				this._type2IconMap = iconMap;
+			}
+			return this._type2IconMap[type2Id] || [];
 		},
 		
 		shipNameAffix :function(affix){
@@ -329,7 +360,7 @@ Provides access to data on built-in JSON files
 			return this.distinctNameDelimiter(
 				[this.shipName(shipMaster.api_name), this.shipReadingName(shipMaster.api_yomi)]
 					.filter(x => !!x && x !== "-")
-					.join("")
+					.joinIfNeeded()
 			);
 		},
 		
@@ -365,6 +396,13 @@ Provides access to data on built-in JSON files
 			var rangeTermsMap = {"1":"RangeShort", "2":"RangeMedium", "3":"RangeLong", "4":"RangeVeryLong"};
 			var term = rangeTermsMap[apiLeng] || "Unknown";
 			return !returnTerm ? this.term(term) : term;
+		},
+		
+		gearRange :function(apiLeng, returnTerm){
+			var rangeTermsMap = {"1":"RangeShortAbbr", "2":"RangeMediumAbbr", "3":"RangeLongAbbr", "4":"RangeVeryLongAbbr", "5":"RangeExtremeLongAbbr"};
+			var term = rangeTermsMap[apiLeng];
+			// return the api value itself if new name term not decided yet
+			return !returnTerm ? this.term(term || apiLeng) : term || "Unknown";
 		},
 		
 		exp :function(level){
@@ -564,12 +602,14 @@ Provides access to data on built-in JSON files
 		
 		cutinTypeDay :function(index){
 			return (typeof index === "undefined") ? this._battle.cutinDay :
-				this._battle.cutinDay[index] || "";
+				// move Nelson Touch index 100 to 20
+				this._battle.cutinDay[index >= 100 ? index - 80 : index] || "";
 		},
 		
 		cutinTypeNight :function(index){
 			return (typeof index === "undefined") ? this._battle.cutinNight :
-				this._battle.cutinNight[index] || "";
+				// move Nelson Touch index 100 to 20
+				this._battle.cutinNight[index >= 100 ? index - 80 : index] || "";
 		},
 		
 		aacitype :function(index){
@@ -581,15 +621,22 @@ Provides access to data on built-in JSON files
 			return (ConfigManager.info_troll && this._terms.troll[key]) || this._terms.lang[key] || key;
 		},
 		
-		nodeLetter : function(worldId, mapId, edgeId) {
-			var map = this._edges["World " + worldId + "-" + mapId];
+		nodeLetter : function(worldId, mapId, edgeId, timestamp) {
+			const dataSource = this.isEventWorld(worldId) || this.isPhase2Started(timestamp) ?
+				this._edges : this._edgesOld;
+			const map = dataSource["World " + worldId + "-" + mapId];
 			if (typeof map !== "undefined") {
 				var edge = map[edgeId];
 				if (typeof edge !== "undefined") {
-					return edge[1];	// return destination
+					// return destination
+					return edge[1];
 				}
 			}
 			return edgeId;
+		},
+		
+		nodes :function(worldId, mapId) {
+			return this._nodes["World " + worldId + "-" + mapId] || {};
 		},
 		
 		nodeLetters : function(worldId, mapId) {
@@ -928,6 +975,44 @@ Provides access to data on built-in JSON files
 		formatNumber :function(number, locale, options){
 			return !ConfigManager.info_format_numbers || $.type(number) !== "number" ?
 				number : number.toLocaleString(locale, options);
+		},
+		
+		isEventWorld :function(worldId) {
+			return Number(worldId) >= 10;
+		},
+		
+		worldToDesc :function(worldId, mapId, returnTerm) {
+			worldId = Number(worldId);
+			var worldTerm = "Unknown";
+			if(this.isEventWorld(worldId)) {
+				const eventMapDefs = {
+					seasons : ["Winter", "Spring", "Summer", "Fall"],
+					fromId : 21,
+					fromYear : 2013,
+					skippedFrom : [42, 2],
+				}, period = eventMapDefs.seasons.length,
+				worldIndex = worldId >= eventMapDefs.skippedFrom[0] ?
+					worldId - eventMapDefs.fromId + eventMapDefs.skippedFrom[1] :
+					worldId - eventMapDefs.fromId,
+				season = eventMapDefs.seasons[worldIndex % period],
+				year = eventMapDefs.fromYear + Math.floor(worldIndex / period);
+				worldTerm = ["MapNameEventWorld", "MapNameEventSeason" + season, year];
+				return !returnTerm ? KC3Meta.term(worldTerm[0])
+					.format(KC3Meta.term(worldTerm[1]), worldTerm[2]) : worldTerm;
+			} else {
+				worldTerm = "MapNameWorld" + worldId;
+				return !returnTerm ? KC3Meta.term(worldTerm) : worldTerm;
+			}
+		},
+		
+		mapToDesc :function(worldId, mapId) {
+			return this.isEventWorld(worldId) ? "E-" + mapId : [worldId, mapId].join("-");
+		},
+		
+		isPhase2Started :function(datetime) {
+			const timestamp = datetime instanceof Date ? datetime.getTime() : Number(datetime);
+			// using 2018-08-17 00:00:00 as threshold, since maintenance started from 8-15, ended on 8-17
+			return !timestamp || timestamp >= 1534435200000;
 		},
 		
 		/**

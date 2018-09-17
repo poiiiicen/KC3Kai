@@ -12,7 +12,7 @@
         init() {
             this.defineSorters();
             this.showListRowCallback = this.showShipLockingRow;
-            this.lockLimit = 5;
+            this.lockLimit = 6;
             this.heartLockMode = 2;
             this.showShipLevel = true;
         }
@@ -57,6 +57,9 @@
             this.shipRowTemplateDiv = $(".factory .ship_item", this.tab);
             this.addFilterUI();
             this.showListGrid();
+            $(".ship_header .ship_stat img").each((_, img) => {
+                $(img).attr("src", KC3Meta.statIcon($(img).parent().data("type")));
+            });
             this.shipListHeaderDiv = $(".ship_header .ship_field.hover", this.tab);
             this.registerShipListHeaderEvent(this.shipListHeaderDiv);
             this.shipListHeaderDiv.on("click", (e) => {
@@ -255,7 +258,7 @@
                 const gear = KC3GearManager.get(equipId);
                 if(gear.exists()) {
                     $("img", element)
-                        .attr("src", `/assets/img/items/${gear.master().api_type[3]}.png`)
+                        .attr("src", KC3Meta.itemIcon(gear.master().api_type[3]))
                         .attr("alt", gear.master().api_id)
                         .click(this.gearClickFunc)
                         .error(function() {
@@ -384,10 +387,17 @@
         }
 
         loadShipLockPlan() {
-            if (localStorage.lock_plan !== undefined)
+            if (localStorage.lock_plan !== undefined) {
                 this.lockPlans = JSON.parse(localStorage.lock_plan);
-            else
+                // Add insufficient & remove overflow, guarantee = `this.lockLimit`
+                while (this.lockPlans.length < this.lockLimit) {
+                    this.lockPlans.push([]);
+                }
+                if (this.lockPlans.length > this.lockLimit)
+                    this.lockPlans.length = this.lockLimit;
+            } else {
                 this.resetShipLockPlan();
+            }
         }
 
         resetShipLockPlan() {

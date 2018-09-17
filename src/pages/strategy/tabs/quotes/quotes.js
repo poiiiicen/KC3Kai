@@ -34,7 +34,7 @@
 			masterId = Number(masterId) || 318;
 			var shipLines = quotes[masterId];
 			var shipData = KC3Master.ship(masterId);
-			$(".voice_list").empty();
+			$(".voice_list").html("");
 			$(".ship_info .ship_name").text( this.buildShipName(masterId, shipData) );
 			$(".ship_info .ship_name").data("id", masterId);
 			$(".ship_info .ship_name").addClass("hover").off("click").click(function(){
@@ -107,7 +107,7 @@
 					}
 					$(".voice_list .player").empty();
 					$(".voice_list .subtitle").removeClass("playing");
-					var player = $('<audio controls autoplay><source/></audio>');
+					var player = $('<audio controls autoplay controlslist="nodownload"><source/></audio>');
 					$("source", player).attr("src", voiceSrc);
 					$(".player", elm).html(player);
 					var audio = player.get(0);

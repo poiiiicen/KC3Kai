@@ -44,9 +44,9 @@ KC3改 Equipment Object
 	 * It might be moved to an independent JSON, but stays here so that we can add comments.
 	 * @return the bonus definition table with new counters of related equipment.
 	 * @see URLs some summary tables:
-	 *  * [20180616 ALL] https://github.com/andanteyk/ElectronicObserver/blob/develop/ElectronicObserver/Other/Information/kcmemo.md#%E7%89%B9%E6%AE%8A%E8%A3%85%E5%82%99%E3%81%AB%E3%82%88%E3%82%8B%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E8%A3%9C%E6%AD%A3
+	 *  * [20180904 ALL] https://github.com/andanteyk/ElectronicObserver/blob/develop/ElectronicObserver/Other/Information/kcmemo.md#%E7%89%B9%E6%AE%8A%E8%A3%85%E5%82%99%E3%81%AB%E3%82%88%E3%82%8B%E3%83%91%E3%83%A9%E3%83%A1%E3%83%BC%E3%82%BF%E8%A3%9C%E6%AD%A3
 	 *  * [20180810 ALL] https://imgur.com/a/kd3fSSo
-	 *  * [20180721 ALL] http://furukore.com/archives/13793
+	 *  * [20180816 ALL] http://furukore.com/archives/13793
 	 *  * [20180726  DD] https://zekamashi.net/kancolle-kouryaku/kutiku-fit/
 	 *  * [20180808  DD] https://kitongame.com/%E3%80%90%E8%89%A6%E3%81%93%E3%82%8C%E3%80%91%E9%A7%86%E9%80%90%E8%89%A6%E3%81%AE%E4%B8%BB%E7%A0%B2%E3%83%95%E3%82%A3%E3%83%83%E3%83%88%E8%A3%9C%E6%AD%A3%E3%81%A8%E8%89%A6%E7%A8%AE%E5%88%A5%E3%81%8A/#i
 	 *  * [20180429  DD] https://twitter.com/Lambda39/status/990268289866579968
@@ -66,6 +66,43 @@ KC3改 Equipment Object
 				quadrupleTorpedoLateModelIds: [286],
 				kamikazeTwinTorpedo: 0,
 				kamikazeTwinTorpedoIds: [174],
+			},
+			// Type 97 Torpedo Bomber (931 Air Group)
+			"82": {
+				count: 0,
+				byClass: {
+					// Taiyou Kai+ (CAUTION: remodel group starts from Kasugamaru)
+					// Unknown for Shinyou
+					"76": {
+						remodel: 1,
+						excludes: [526],
+						multiple: { "tais": 1, "houk": 1 },
+					},
+				},
+			},
+			// Ju 87C Kai Ni (w/ KMX)
+			"305": {
+				count: 0,
+				byClass: {
+					// Graf Zeppelin Class
+					"63": {
+						multiple: { "houg": 1, "houk": 1 },
+					},
+					// Aquila Class
+					"68": "63",
+				},
+				byShip: [
+					// Taiyou Kai Ni
+					{
+						ids: [529],
+						multiple: { "tais": 1, "houk": 1 },
+					},
+					// Shinyou
+					{
+						ids: [534, 381, 536],
+						multiple: { "tais": 3, "houk": 2 },
+					},
+				],
 			},
 			// Suisei
 			"24": {
@@ -135,6 +172,17 @@ KC3改 Equipment Object
 					},
 				},
 			},
+			// Type 2 Reconnaissance Aircraft
+			"61": {
+				count: 0,
+				byClass: {
+					// Ise Class Kai Ni
+					"2": {
+						remodel: 2,
+						single: { "houg": 3, "souk": 1, "houk": 2 },
+					},
+				},
+			},
 			// Zuiun (634 Air Group)
 			"79": {
 				count: 0,
@@ -198,15 +246,20 @@ KC3改 Equipment Object
 					multiple: { "houg": 3, "houk": 1 },
 				},
 			},
-			// Type 2 Reconnaissance Aircraft
-			"61": {
+			// S9 Osprey
+			"304": {
 				count: 0,
 				byClass: {
-					// Ise Class Kai Ni
-					"2": {
-						remodel: 2,
-						single: { "houg": 3, "souk": 1, "houk": 2 },
+					// Kuma Class
+					"4": {
+						multiple: { "houg": 1, "tais": 1, "houk": 1 },
 					},
+					// Sendai Class
+					"16": "4",
+					// Nagara Class
+					"20": "4",
+					// Agano Class
+					"41": "4",
 				},
 			},
 			// 35.6cm Twin Gun Mount (Dazzle Camouflage)
@@ -293,6 +346,10 @@ KC3改 Equipment Object
 			"298": {
 				count: 0,
 				byClass: {
+					// Nelson Class
+					"88": {
+						multiple: { "houg": 2, "souk": 1 },
+					},
 					// Queen Elizabeth Class
 					"67": {
 						multiple: { "houg": 2, "souk": 1, "houk": -2 },
@@ -308,6 +365,10 @@ KC3改 Equipment Object
 			"299": {
 				count: 0,
 				byClass: {
+					// Nelson Class
+					"88": {
+						multiple: { "houg": 2, "souk": 1 },
+					},
 					// Queen Elizabeth Class
 					"67": {
 						multiple: { "houg": 2, "souk": 1, "houk": -2 },
@@ -323,6 +384,10 @@ KC3改 Equipment Object
 			"300": {
 				count: 0,
 				byClass: {
+					// Nelson Class
+					"88": {
+						multiple: { "houg": 2, "souk": 1 },
+					},
 					// Queen Elizabeth Class
 					"67": {
 						multiple: { "houg": 2, "souk": 1, "houk": -2 },
@@ -332,6 +397,22 @@ KC3改 Equipment Object
 						remodel: 2,
 						multiple: { "houg": 1, "souk": 1, "houk": -3 },
 					},
+				},
+			},
+			// Bofors 15.2cm Twin Gun Mount Model 1930
+			"303": {
+				count: 0,
+				byClass: {
+					// Kuma Class
+					"4": {
+						multiple: { "houg": 1, "tyku": 1 },
+					},
+					// Sendai Class
+					"16": "4",
+					// Nagara Class
+					"20": "4",
+					// Agano Class
+					"41": "4",
 				},
 			},
 			// 61cm Quadruple (Oxygen) Torpedo Mount
@@ -550,6 +631,22 @@ KC3改 Equipment Object
 						flags: [ "surfaceRadar" ],
 						single: { "houg": 3, "houk": 2 },
 					},
+				},
+			},
+			// 12.7cm Twin Gun Mount Model A
+			"297": {
+				count: 0,
+				byClass: {
+					// Fubuki Class
+					"12": {
+						multiple: { "houk": 2 },
+					},
+					// Ayanami Class
+					"1": {
+						multiple: { "houk": 1 },
+					},
+					// Akatsuki Class
+					"5": "1",
 				},
 			},
 			// 12.7cm Twin Gun Mount Model A Kai Ni
@@ -1549,16 +1646,14 @@ KC3改 Equipment Object
 		], function(index, sdata) {
 			const statBox = $('<div><img class="icon stats_icon_img"/> <span class="value"></span>&nbsp;</div>');
 			statBox.css("font-size", "11px");
-			if((gearData["api_" + sdata[1]] || 0) !== 0
-				&& (planeStats.indexOf(sdata[0]) < 0
-				|| (planeStats.indexOf(sdata[0]) >=0
-					&& KC3GearManager.landBasedAircraftType3Ids.indexOf(gearData.api_type[3])>-1)
-				)
-			) { // Path of image should be inputted, maybe
-				$(".icon", statBox).attr("src", "/assets/img/stats/" + sdata[0] + ".png");
-				$(".icon", statBox).width(13).height(13).css("margin-top", "-3px");
+			if((gearData["api_" + sdata[1]] || 0) !== 0 && (
+				!planeStats.includes(sdata[0]) || (planeStats.includes(sdata[0]) &&
+					KC3GearManager.landBasedAircraftType3Ids.includes(gearData.api_type[3]))
+			)) {
+				$(".icon", statBox).attr("src", KC3Meta.statIcon(sdata[0]));
+				$(".icon", statBox).css("max-width", 15).height(13).css("margin-top", "-3px");
 				if(sdata[0] === "rn") {
-					$(".value", statBox).text(["?","S","M","L","VL","XL"][gearData["api_" + sdata[1]]] || "?");
+					$(".value", statBox).text(KC3Meta.gearRange(gearData["api_" + sdata[1]]));
 				} else {
 					$(".value", statBox).text(gearData["api_" + sdata[1]]);
 				}
@@ -1576,7 +1671,7 @@ KC3改 Equipment Object
 	KC3Gear.appendFighterPowerTooltip = function(tooltipTitle, gearObj, slotSize, shipOrLb) {
 		const airBox = $('<div><img class="icon stats_icon_img"/> <span class="value"></span></div>');
 		airBox.css("font-size", "11px");
-		$(".icon", airBox).attr("src", "/assets/img/stats/if.png");
+		$(".icon", airBox).attr("src", KC3Meta.statIcon("if"));
 		$(".icon", airBox).width(13).height(13).css("margin-top", "-3px");
 		let pattern, value;
 		switch(ConfigManager.air_formula) {
@@ -1596,7 +1691,7 @@ KC3改 Equipment Object
 		// interception power only applied to aircraft deployed to land base
 		if(shipOrLb instanceof KC3LandBase) {
 			const interceptSpan = $('<div><img class="icon stats_icon_img"/> <span class="value"></span></div>');
-			$(".icon", interceptSpan).attr("src", "/assets/img/stats/ib.png");
+			$(".icon", interceptSpan).attr("src", KC3Meta.statIcon("ib"));
 			$(".icon", interceptSpan).width(13).height(13).css("margin-top", "-3px");
 			$(".value", interceptSpan).text(gearObj.interceptionPower(slotSize));
 			airBox.append("&emsp;").append(interceptSpan.html());
@@ -1638,7 +1733,7 @@ KC3改 Equipment Object
 				* lbAttackerModifier * concatModifier * lbaaAbyssalModifier * enemyCombinedModifier);
 			const powBox = $('<div><img class="icon stats_icon_img"/> <span class="value"></span></div>');
 			powBox.css("font-size", "11px");
-			$(".icon", powBox).attr("src", "/assets/img/stats/" + (isLbaa ? "rk" : "kk") + ".png");
+			$(".icon", powBox).attr("src", KC3Meta.statIcon(isLbaa ? "rk" : "kk"));
 			$(".icon", powBox).width(13).height(13).css("margin-top", "-3px");
 			$(".value", powBox).text("{0}({1})".format(onNormal, onCritical));
 			tooltipTitle.append("<br/>").append(powBox.html());
@@ -1661,7 +1756,7 @@ KC3改 Equipment Object
 			];
 			const powBox = $('<div><img class="icon stats_icon_img"/> <span class="value"></span></div>');
 			powBox.css("font-size", "11px");
-			$(".icon", powBox).attr("src", "/assets/img/stats/" + (isRange ? "rk" : "kk") + ".png");
+			$(".icon", powBox).attr("src", KC3Meta.statIcon(isRange ? "rk" : "kk"));
 			$(".icon", powBox).width(13).height(13).css("margin-top", "-3px");
 			let valueBox = $('<div><span class="vl"></span>(<span class="vlc"></span>)</div>');
 			$(".vl", valueBox).text(onNormal[0]);

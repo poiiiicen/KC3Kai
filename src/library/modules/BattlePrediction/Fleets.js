@@ -9,7 +9,7 @@
 
   // Create a Fleets object with the state of the player and enemy Fleets at battle start
   Fleets.getInitialState = (battleData, playerDamecons) => {
-    const { extractHps, installDamecons } = KC3BattlePrediction.fleets;
+    const { extractHps, extractSubInfo, installDamecons } = KC3BattlePrediction.fleets;
 
     return pipe(
       juxt([
@@ -17,22 +17,25 @@
         extractHps('api_f_nowhps_combined', 'api_f_maxhps_combined'),
         extractHps('api_e_nowhps', 'api_e_maxhps'),
         extractHps('api_e_nowhps_combined', 'api_e_maxhps_combined'),
+        pipe(extractSubInfo('api_friendly_info'), extractHps('api_nowhps', 'api_maxhps')),
       ]),
-      ([playerMain, playerEscort, enemyMain, enemyEscort]) => ({
+      ([playerMain, playerEscort, enemyMain, enemyEscort, friendMain]) => ({
         [Side.PLAYER]: { main: playerMain, escort: playerEscort },
         [Side.ENEMY]: { main: enemyMain, escort: enemyEscort },
+        // No escort fleet found yet for NPC friend fleet support
+        [Side.FRIEND]: { main: friendMain, escort: [] }
       }),
       over(Side.PLAYER, map(installDamecons(playerDamecons)))
     )(battleData);
   };
 
-  Fleets.simulateAttack = (fleets, { damage, defender, attacker }) => {
+  Fleets.simulateAttack = (fleets, { damage, defender, attacker, info }) => {
     const { getPath } = KC3BattlePrediction.fleets;
     const { dealDamage, takeDamage } = KC3BattlePrediction.fleets.ship;
 
     return pipe(
-      over(getPath(fleets, defender), takeDamage(damage)),
-      attacker ? over(getPath(fleets, attacker), dealDamage(damage)) : x => x
+      over(getPath(fleets, defender), takeDamage(damage, info)),
+      attacker ? over(getPath(fleets, attacker), dealDamage(damage, info)) : x => x
     )(fleets);
   };
 
@@ -44,11 +47,13 @@
     const { formatShip } = KC3BattlePrediction.fleets.ship;
     return pipe(
       mapShips(formatShip),
-      ({ player, enemy }) => ({
+      ({ [Side.PLAYER]: player, [Side.ENEMY]: enemy, [Side.FRIEND]: friend }) => ({
         playerMain: player.main,
         playerEscort: player.escort,
         enemyMain: enemy.main,
         enemyEscort: enemy.escort,
+        friendMain: friend.main,
+        friendEscort: friend.escort,
       })
     )(fleets);
   };
@@ -70,6 +75,10 @@
     }
 
     return zipWith(createShip, nowHps, maxHps);
+  };
+
+  Fleets.extractSubInfo = (subProp) => battleData => {
+    return battleData[subProp] || {};
   };
 
   Fleets.installDamecons = playerDamecons => (fleet, fleetRole) => {

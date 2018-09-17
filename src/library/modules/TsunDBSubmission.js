@@ -9,7 +9,15 @@
 	window.TsunDBSubmission = {
 		celldata : {
 			map: null,
-			data: []
+			difficulty: null,
+			amountOfNodes: null,
+			cleared: null,
+			celldata: []
+		},
+		eventreward : {
+			map: null,
+			difficulty: null,
+			rewards: []
 		},
 		data : {
 			map: null,
@@ -22,9 +30,14 @@
 			fleetSpeed: null,
 			edgeID: [],
 			los: [],
-			nodeType: null,
-			eventId: null,
-			eventKind: null,
+			nodeInfo: {
+				nodeType: null,
+				eventId: null,
+				eventKind: null,
+				nodeColor: null,
+				amountOfNodes: null,
+				itemGet: []
+			},
 			nextRoute: null,
 			currentMapHP: null,
 			maxMapHP: null,
@@ -67,6 +80,49 @@
 			improvements: null,
 			kc3version: null
 		},
+		unexpectedDamage : {
+			map: null,
+			edgeID: null,
+			difficulty: null,
+			debuffed: null,
+			cleared: null,
+			engagement: null,
+			damageInstance: {
+				actualDamage: null,
+				expectedDamage: null,
+				isCritical: null,
+			},
+			ship: {
+				id: null, 
+				damageStatus: null,
+				equip: null,
+				improvements: null,
+				proficiency: null,
+				slots: null,
+				stats: null,
+				position: null,
+				formation: null,
+				isMainFleet: null,
+				combinedFleet: null,
+				rAmmoMod: null,
+				spAttackType: null,
+				cutinEquips: null,
+				shellingPower: null,
+				armorReduction: null,
+				precapPower: null,
+				postcapPower: null,
+				time: null,
+			},
+			enemy: {
+				id: null,
+				equip: null,
+				formation: null,
+				position: null,
+				armor: null,
+				isMainFleet: null,
+			},
+			kc3version: null,
+		},
 		development : {
 			hqLvl: null,
 			flagship: {},
@@ -105,8 +161,8 @@
 				'api_req_combined_battle/each_ld_airbattle': this.processEnemy,
 				// PvP battles and regular night battles are excluded intentionally
 				
-				'api_req_sortie/battleresult': this.processDrop,
-				'api_req_combined_battle/battleresult': this.processDrop,
+				'api_req_sortie/battleresult': [this.processDrop, this.processUnexpected],
+				'api_req_combined_battle/battleresult': [this.processDrop, this.processUnexpected],
 				// PvP battle_result excluded intentionally
 				
 				// Development related
@@ -120,12 +176,14 @@
 		},
 		
 		processSelectEventMapRank: function(http) {
+			const apiData = http.response.api_data;
 			const mapId = [http.params.api_maparea_id, http.params.api_map_no].join('');
-			const eventMapInfo = (this.mapInfo[mapId] || {}).api_eventmap;
+			const eventMapInfo = (this.mapInfo.find(i => i.api_id == mapId) || {}).api_eventmap;
 			if(eventMapInfo) {
 				eventMapInfo.api_selected_rank = Number(http.params.api_rank);
-				const apiData = http.response.api_data;
 				if(apiData && apiData.api_maphp) {
+					eventMapInfo.api_max_maphp = Number(apiData.api_maphp.api_max_maphp);
+					eventMapInfo.api_now_maphp = Number(apiData.api_maphp.api_now_maphp);
 					eventMapInfo.api_gauge_num = Number(apiData.api_maphp.api_gauge_num);
 					eventMapInfo.api_gauge_type = Number(apiData.api_maphp.api_gauge_type);
 				}
@@ -134,11 +192,18 @@
 		
 		processCellData: function(http){
 			const apiData = http.response.api_data;
+			this.celldata.amountOfNodes = apiData.api_cell_data.length;
+			this.celldata.celldata = apiData.api_cell_data;
 			
+			// Processed values from processStart and processMapInfo
 			this.celldata.map = this.data.map;
-			this.celldata.data = apiData.api_cell_data;
+			const mapData = this.mapInfo.find(i => i.api_id == this.currentMap.join('')) || {};
+			this.celldata.cleared = mapData.api_cleared;
+			if(mapData.api_eventmap) {
+				this.celldata.difficulty = mapData.api_eventmap.api_selected_rank;
+			}
 			
-			//this.sendData(this.celldata, '???');
+			this.sendData(this.celldata, 'celldata');
 		},
 		
 		processStart: function(http) {
@@ -146,7 +211,10 @@
 			const apiData = http.response.api_data;
 			this.data.sortiedFleet = Number(http.params.api_deck_id);
 			this.data.fleetType = PlayerManager.combinedFleet;
-
+			
+			// Sets amount of nodes value in NodeInfo
+			this.data.nodeInfo.amountOfNodes = apiData.api_cell_data.length;
+			
 			// Sets the map value
 			const world = Number(apiData.api_maparea_id);
 			const map = Number(apiData.api_mapinfo_no);
@@ -183,9 +251,11 @@
 			this.data.edgeID.push(apiData.api_no);
 			
 			// All values related to node types
-			this.data.nodeType = apiData.api_color_no;
-			this.data.eventId = apiData.api_event_id;
-			this.data.eventKind = apiData.api_event_kind;
+			this.data.nodeInfo.nodeType = apiData.api_color_no;
+			this.data.nodeInfo.eventId = apiData.api_event_id;
+			this.data.nodeInfo.eventKind = apiData.api_event_kind;
+			this.data.nodeInfo.nodeColor = apiData.api_color_no;
+			this.data.nodeInfo.itemGet = apiData.api_itemget || [];
 			
 			// Checks whether the fleet has hit a dead end or not
 			this.data.nextRoute = apiData.api_next;
@@ -202,14 +272,20 @@
 				this.data.currentMapHP = apiData.api_eventmap.api_now_maphp;
 				this.data.maxMapHP = apiData.api_eventmap.api_max_maphp;
 				this.data.difficulty = mapData.api_eventmap.api_selected_rank;
-				this.data.gaugeNum = mapData.api_eventmap.api_gauge_num;
+				this.data.gaugeNum = mapData.api_eventmap.api_gauge_num || 1;
 				this.data.gaugeType = mapData.api_eventmap.api_gauge_type;
 				this.data.debuffSound = mapStorage.debuffSound;
 				
-				this.sendData(this.data, 'event/routing');
-			}
-			else{
-				this.sendData(this.data, 'routing');
+				this.sendData(this.data, 'eventrouting');
+			} else {
+				// This is made to support the old schema for the routing. This will be deprecated in the future.
+				const oldFormatData = $.extend(true, {}, this.data);
+				delete oldFormatData.nodeInfo;
+				oldFormatData.nodeType = this.data.nodeInfo.nodeType;
+				oldFormatData.eventId = this.data.nodeInfo.eventId;
+				oldFormatData.eventKind = this.data.nodeInfo.eventKind;
+				
+				this.sendData(oldFormatData, 'routing');
 			}
 			
 			// Send Land-base Air Raid enemy compos
@@ -250,9 +326,22 @@
 			this.sendData(this.enemyComp, 'enemy-comp');
 		},
 		
+		processEventReward: function(http){
+			const apiData = http.response.api_data;
+			
+			this.eventreward.map = this.data.map;
+			this.eventreward.difficulty = this.data.difficulty;
+			this.eventreward.rewards = apiData.api_get_eventitem;
+			
+			this.sendData(this.eventreward, 'eventreward');
+		},
+		
 		processDrop: function(http) {
 			if(!this.currentMap[0] || !this.currentMap[1]) { return; }
 			const apiData = http.response.api_data;
+			if(apiData.api_get_eventitem !== undefined) {
+				this.processEventReward(http);
+			}
 			const lastShipCounts = this.shipDrop.counts || {};
 			this.shipDrop = {};
 			
@@ -260,10 +349,11 @@
 			this.shipDrop.node = this.data.edgeID[this.data.edgeID.length - 1];
 			this.shipDrop.rank = apiData.api_win_rank;
 			this.shipDrop.cleared = this.data.cleared;
-			// Enemy comp name only existed in result API data
+			// Enemy comp name and exp only existed in result API data
 			if(this.enemyComp.enemyComp && !this.enemyComp.enemyComp.isAirRaid) {
 				this.enemyComp.enemyComp.mapName = apiData.api_quest_name;
 				this.enemyComp.enemyComp.compName = apiData.api_enemy_info.api_deck_name;
+				this.enemyComp.enemyComp.baseExp = apiData.api_get_base_exp;
 				this.shipDrop.enemyComp = this.enemyComp.enemyComp;
 			}
 			this.shipDrop.hqLvl = this.data.hqLvl;
@@ -357,6 +447,27 @@
 			this.sendData(this.aaci, 'aaci');
 		},
 		
+		processUnexpected: function(http){
+			const thisNode = KC3SortieManager.currentNode();
+			const unexpectedList = thisNode.unexpectedList;
+			if(!unexpectedList || !unexpectedList.length) { return; }
+			const template = {
+				cleared: !!this.data.cleared,
+				edgeID: thisNode.id,
+				map: this.data.map,
+				difficulty: this.data.difficulty,
+				kc3version: this.manifest.version + ("update_url" in this.manifest ? "" : "d")
+			};
+			unexpectedList.forEach(a => {
+				if(a.isUnexpected || a.landFlag || (thisNode.isBoss() && KC3Meta.isEventWorld(this.currentMap[0]))) {
+					this.unexpectedDamage = Object.assign({}, a, template);
+					delete this.unexpectedDamage.landFlag;
+					delete this.unexpectedDamage.isUnexpected;
+					this.sendData(this.unexpectedDamage, 'abnormal');
+				}
+			});
+		},
+
 		processDevelopment: function(http){
 			this.cleanNonCombat();
 			const request = http.params;
@@ -408,8 +519,17 @@
 		 */
 		cleanOnStart: function() {
 			this.celldata = {};
+			this.eventreward = {};
 			this.currentMap = [0, 0];
 			this.data.edgeID = [];
+			this.data.nodeInfo = {
+				nodeType: null,
+				eventId: null,
+				eventKind: null,
+				nodeColor: null,
+				amountOfNodes: null,
+				itemGet: []
+			};
 			this.shipDrop.counts = {};
 		},
 		
@@ -462,7 +582,7 @@
 				}
 			} catch (e) {
 				console.warn("TsunDB submission error", e);
-				// Its not Mongo, but Mango =D
+				// I like mangos
 				var reportParams = $.extend({}, requestObj.params);
 				delete reportParams.api_token;
 				KC3Network.trigger("APIError", {
@@ -488,13 +608,19 @@
 				method: 'POST',
 				headers: {
 					'content-type': 'application/json',
-					'tsun-ver': 'Michishio Kai'
+					'tsun-ver': 'Kasumi'
 				},
 				data: JSON.stringify(payload)
 			}).done( function() {
 				console.log(`Tsun DB Submission to /${type} done.`);
 			}).fail( function(jqXHR, textStatus, error) {
-				console.warn(`Tsun DB Submission to /${type} ${textStatus}`, jqXHR.status, error);
+				const statusCode = jqXHR.status;
+				if(statusCode === 400) {
+					// Server-side defines: '400 Bad Request' = status can be ignored
+					console.log(`Tsun DB Submission to /${type} ${textStatus}`, statusCode, error);
+				} else {
+					console.warn(`Tsun DB Submission to /${type} ${textStatus}`, statusCode, error);
+				}
 			});
 			return;
 		}

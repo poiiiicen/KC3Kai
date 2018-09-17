@@ -1102,7 +1102,7 @@
 			
 			// Show world map and difficulty
 			$(".module.activity .map_world").text(
-				(KC3SortieManager.map_world>10 ? 'E' : KC3SortieManager.map_world)
+				(KC3Meta.isEventWorld(KC3SortieManager.map_world) ? 'E' : KC3SortieManager.map_world)
 				+"-"
 				+KC3SortieManager.map_num
 				+ ((KC3SortieManager.map_world >= 41)
@@ -1112,7 +1112,7 @@
 					  KC3Meta.term("EventRankNormalAbbr"),
 					  KC3Meta.term("EventRankHardAbbr") ]
 					[ KC3SortieManager.map_difficulty ]
-					: (KC3SortieManager.map_world >= 10)
+					: KC3Meta.isEventWorld(KC3SortieManager.map_world)
 					? [ "",
 					  KC3Meta.term("EventRankEasyAbbr"),
 					  KC3Meta.term("EventRankNormalAbbr"),
@@ -1481,7 +1481,7 @@
 				var MasterItem = KC3Master.slotitem( data.itemMasterId );
 				var countExisting = KC3GearManager.countByMasterId( data.itemMasterId );
 				
-				icon = "../../../../assets/img/items/"+MasterItem.api_type[3]+".png";
+				icon = KC3Meta.itemIcon(MasterItem.api_type[3]);
 				$(".activity_crafting .equipIcon img").attr("src", icon);
 				$(".activity_crafting .equipName").text( PlayerItem.name() );
 				
@@ -1853,13 +1853,13 @@
 		if(fcontactId > 0){
 			var fcpMaster = KC3Master.slotitem(fcontactId);
 			fContactIcon = $("<img />")
-				.attr("src", "../../../../assets/img/items/"+fcpMaster.api_type[3]+".png")
+				.attr("src", KC3Meta.itemIcon(fcpMaster.api_type[3]))
 				.attr("title", KC3Meta.gearName(fcpMaster.api_name));
 		}
 		if(econtactId > 0){
 			var ecpMaster = KC3Master.slotitem(econtactId);
 			eContactIcon = $("<img />")
-				.attr("src", "../../../../assets/img/items/"+ecpMaster.api_type[3]+".png")
+				.attr("src", KC3Meta.itemIcon(ecpMaster.api_type[3]))
 				.attr("title", KC3Meta.gearName(ecpMaster.api_name));
 		}
 		$(contactSpan)
@@ -1873,7 +1873,7 @@
 		if(parseInt(MasterItem["api_"+StatProperty], 10) !== 0){
 			var thisStatBox = $("#factory .equipStat").clone().appendTo(".module.activity .activity_crafting .equipStats");
 			
-			$("img", thisStatBox).attr("src", "../../../../assets/img/stats/"+Code+".png");
+			$("img", thisStatBox).attr("src", KC3Meta.statIcon(Code));
 			$(".equipStatText", thisStatBox).text( MasterItem["api_"+StatProperty] );
 		}
 	}

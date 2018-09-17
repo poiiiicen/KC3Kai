@@ -183,9 +183,9 @@ button, input, select, textarea {
 	border-bottom-color:#fcfcfc;
 }
 .ui-tooltip-content .ship_tooltip .stat_icon img {
-	width:15px;
-	height:15px;
-	margin-top:-2px;
+	max-width:19px;
+	height:16px;
+	vertical-align:bottom;
 }
 .ui-tooltip-content .ship_tooltip .stat_name {
 	color:#a9a150;
@@ -387,7 +387,7 @@ button, input, select, textarea {
 -------------------------------*/
 #content {
 	width:700px;
-	min-height:1390px;
+	min-height:1415px;
 	float:left;
 	background:#222222;
 	overflow:hidden;
@@ -2024,6 +2024,12 @@ button, input, select, textarea {
 .tab_mstship .shipInfo .gunfit .fitgear .gearFitNight {
 	border-radius:0px !important;
 }
+.tab_mstship .shipInfo .equipSlots .equippableType {
+	background:#333;
+}
+.tab_mstship .shipInfo .equipExSlot .equippableType {
+	background:#444;
+}
 
 /* GEARS LIBRARY
 --------------------------------*/
@@ -2415,9 +2421,6 @@ button, input, select, textarea {
 	color:#ffcc00;
 	background: #5f5f5f;
 	border-radius:0px !important;
-}
-.tab_shipdrop .massSelect dl.rank_selector {
-	width:300px !important;
 }
 .tab_shipdrop .filters .time_input input {
 	border:1px solid #555;

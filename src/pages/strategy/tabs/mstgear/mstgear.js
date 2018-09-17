@@ -28,25 +28,30 @@
 		Places data onto the interface
 		---------------------------------*/
 		execute :function(){
-			var self = this;
+			const self = this;
 			
 			// List all equipment
-			var gearBox;
-			$.each(KC3Master.all_slotitems(), function(index, GearData){
-				gearBox = $(".tab_mstgear .factory .gearRecord").clone();
-				gearBox.attr("data-id", GearData.api_id);
-				$(".gearIcon img", gearBox).attr("src", "../../../../assets/img/items/"+GearData.api_type[3]+".png")
-					.error(function() { $(this).unbind("error").attr("src", "../../assets/img/ui/empty.png"); });
-				$(".gearName", gearBox).text( "[" + GearData.api_id + "] " + KC3Meta.gearName(GearData.api_name) );
-				gearBox.appendTo(".tab_mstgear .gearRecords");
+			const iconFailsafeHandler = function(e) {
+				$(this).unbind("error").attr("src", "/assets/img/ui/empty.png");
+			};
+			$.each(KC3Master.all_slotitems(), function(index, gearData){
+				if(!gearData) { return true; }
+				const id = gearData.api_id,
+					iconType = gearData.api_type[3],
+					gearName = KC3Meta.gearName(gearData.api_name);
+				const gearBox = $(".tab_mstgear .factory .gearRecord")
+					.clone().appendTo(".tab_mstgear .gearRecords");
+				gearBox.attr("data-id", id);
+				$(".gearIcon img", gearBox).attr("src", KC3Meta.itemIcon(iconType)).error(iconFailsafeHandler);
+				$(".gearName", gearBox).text(`[${id}] ${gearName}`).attr("title", gearName);
 			});
+			$(".tab_mstgear .gearRecords").createChildrenTooltips();
 			
 			// Select equipment
 			$(".tab_mstgear .gearRecords .gearRecord").on("click", function(){
 				var gid = $(this).data("id");
 				if( gid != self.currentGearId ){
 					KC3StrategyTabs.gotoTab(null, gid);
-					//self.showGear( $(this).data("id") );
 				}
 			});
 			
@@ -136,6 +141,7 @@
 			
 			// Stats
 			var statBox;
+			var planeOnlyStats = ["or", "kk"];
 			$(".tab_mstgear .gearInfo .stats").empty();
 			$.each([
 				["hp", "taik", "ShipHp"],
@@ -146,34 +152,33 @@
 				["dv", "baku", "ShipBombing"],
 				["aa", "tyku", "ShipAntiAir"],
 				["as", "tais", "ShipAsw"],
-				["ht", "houm", "ShipAccuracy", "ShipAccAntiBomber"],
-				["ev", "houk", "ShipEvasion", "ShipEvaInterception"],
+				["ht", "houm", "ShipAccuracy", "ib", "ShipAccAntiBomber"],
+				["ev", "houk", "ShipEvasion", "if", "ShipEvaInterception"],
 				["ls", "saku", "ShipLos"],
 				["rn", "leng", "ShipLength"],
 				["or", "distance", "ShipRadius"],
 				["kk", "cost", "ShipDeployCost"],
 			], function(index, sdata){
-				if((gearData["api_"+sdata[1]]||0) !== 0
-					&& (["or","kk"].indexOf(sdata[0]) < 0
-					|| (["or","kk"].indexOf(sdata[0]) >=0 &&
-						KC3GearManager.landBasedAircraftType3Ids.indexOf(gearData.api_type[3])>-1) )
-				){
+				if((gearData["api_"+sdata[1]]||0) !== 0 && (
+					!planeOnlyStats.includes(sdata[0]) || (
+						planeOnlyStats.includes(sdata[0]) &&
+						KC3GearManager.landBasedAircraftType3Ids.includes(gearData.api_type[3])
+					)
+				)) {
+					var isLandFighter = gearData.api_type[2] === 48;
 					statBox = $(".tab_mstgear .factory .stat").clone();
 					$("img", statBox)
-						.attr("src", "../../../../assets/img/stats/"+sdata[0]+".png")
-						.attr("title", KC3Meta.term(
-							sdata[sdata.length > 3 && gearData.api_type[2] === 48 ? 3 : 2]) || "")
+						.attr("src", KC3Meta.statIcon(sdata[
+							sdata.length > 3 && isLandFighter ? 3 : 0
+						])).attr("title", KC3Meta.term(
+							sdata[sdata.length > 4 && isLandFighter ? 4 : 2]) || "")
 						.lazyInitTooltip();
 					if(sdata[0]==="rn"){ // For range length
-						$(".stat_value", statBox).text( [
-							"?", "S", "M", "L", "VL", "XL"
-						][gearData["api_"+sdata[1]]] || "?" );
-					}else if(sdata[0]==="sp"){ // For speed, but not found in gears
-						$(".stat_value", statBox).text( ({
-							"0":"L", "5":"S", "10":"F", "15":"F+", "20":"F++"
-						})[gearData["api_"+sdata[1]]] || "?");
+						$(".stat_value", statBox).text(
+							KC3Meta.gearRange(gearData["api_"+sdata[1]])
+						);
 					}else if(sdata[0]==="kk"){ // For bauxite cost when deploy to LBAS
-						var landSlot = KC3GearManager.landBaseReconnType2Ids.indexOf(gearData.api_type[2])>-1 ?
+						var landSlot = KC3GearManager.landBaseReconnType2Ids.includes(gearData.api_type[2]) ?
 							KC3GearManager.landBaseReconnMaxSlot : KC3GearManager.landBaseOtherMaxSlot;
 						var deployCost = gearData["api_"+sdata[1]] * landSlot;
 						$(".stat_value", statBox).text( "{0}(={1}x{2})".format(deployCost, gearData["api_"+sdata[1]], landSlot) );
